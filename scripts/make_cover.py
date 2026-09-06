@@ -74,6 +74,60 @@ def outlined_text(draw: ImageDraw.ImageDraw, xy: tuple[int, int], text: str,
     draw.text(xy, text, font=font, fill=fill, stroke_width=stroke, stroke_fill=stroke_fill)
 
 
+def wrap_lines(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont,
+               max_width: int) -> list[str]:
+    """Greedily wrap Chinese (or space-separated Latin) text to a pixel width."""
+    if not text:
+        return []
+    latin_words = " " in text and not any("\u4e00" <= c <= "\u9fff" for c in text)
+    chunks = text.split() if latin_words else list(text)
+    lines: list[str] = []
+    current = ""
+    for chunk in chunks:
+        candidate = (current + " " + chunk).strip() if latin_words else current + chunk
+        box = draw.textbbox((0, 0), candidate, font=font)
+        if current and box[2] - box[0] > max_width:
+            lines.append(current)
+            current = chunk
+        else:
+            current = candidate
+    if current:
+        lines.append(current)
+    return lines
+
+
+def fit_block(draw: ImageDraw.ImageDraw, text: str, max_width: int, initial_size: int,
+              min_size: int, max_lines: int, stroke: int) -> tuple[ImageFont.FreeTypeFont, list[str]]:
+    """Find the largest font that keeps a text block within its line budget."""
+    for size in range(initial_size, min_size - 1, -2):
+        f = load_font(size)
+        lines = wrap_lines(draw, text, f, max_width - stroke * 2)
+        if len(lines) <= max_lines:
+            return f, lines
+    # At an extreme length, keep the first lines and mark the omission instead of
+    # allowing text to run outside a thumbnail.
+    f = load_font(min_size)
+    lines = wrap_lines(draw, text, f, max_width - stroke * 2)
+    if len(lines) > max_lines:
+        lines = lines[:max_lines]
+        last = lines[-1]
+        while last and draw.textbbox((0, 0), last + "…", font=f)[2] > max_width - stroke * 2:
+            last = last[:-1]
+        lines[-1] = (last + "…") if last else "…"
+    return f, lines
+
+
+def draw_block(draw: ImageDraw.ImageDraw, xy: tuple[int, int], lines: list[str],
+               f: ImageFont.FreeTypeFont, fill: tuple[int, ...], stroke: int,
+               stroke_fill: tuple[int, ...], gap: int = 6) -> int:
+    """Draw lines and return the block height."""
+    x, y = xy
+    line_height = f.size + gap
+    for index, line in enumerate(lines):
+        outlined_text(draw, (x, y + index * line_height), line, f, fill, stroke, stroke_fill)
+    return max(0, len(lines) * line_height - gap)
+
+
 def make_vertical(source: Image.Image, size: tuple[int, int], title: str,
                   subtitle: str, brand: str, subject_x: float) -> Image.Image:
     width, height = size
@@ -89,15 +143,21 @@ def make_vertical(source: Image.Image, size: tuple[int, int], title: str,
 
     margin = max(32, round(width * 0.065))
     eyebrow_font = load_font(max(24, round(width * 0.039)))
-    title_font = load_font(max(44, round(width * 0.090)))
-    subtitle_font = load_font(max(30, round(width * 0.054)))
     brand_font = load_font(max(22, round(width * 0.032)))
     y = panel_top + round(height * 0.047)
     outlined_text(draw, (margin, y), "技术替代的", eyebrow_font, (247, 207, 103, 255), 2, (7, 18, 28, 255))
-    outlined_text(draw, (margin, y + eyebrow_font.size + round(height * 0.012)), title,
-                  title_font, (255, 255, 255, 255), max(3, width // 155), (7, 18, 28, 255))
-    outlined_text(draw, (margin, y + title_font.size + round(height * 0.105)), subtitle,
-                  subtitle_font, (247, 202, 77, 255), max(2, width // 215), (7, 18, 28, 255))
+    title_stroke = max(3, width // 155)
+    subtitle_stroke = max(2, width // 215)
+    title_font, title_lines = fit_block(draw, title, width - margin * 2, max(44, round(width * 0.090)),
+                                         max(30, round(width * 0.050)), 2, title_stroke)
+    title_y = y + eyebrow_font.size + round(height * 0.012)
+    title_height = draw_block(draw, (margin, title_y), title_lines, title_font,
+                              (255, 255, 255, 255), title_stroke, (7, 18, 28, 255), gap=3)
+    subtitle_font, subtitle_lines = fit_block(draw, subtitle, width - margin * 2,
+                                               max(30, round(width * 0.054)), max(24, round(width * 0.032)),
+                                               2, subtitle_stroke)
+    draw_block(draw, (margin, title_y + title_height + round(height * 0.035)), subtitle_lines,
+               subtitle_font, (247, 202, 77, 255), subtitle_stroke, (7, 18, 28, 255), gap=3)
     outlined_text(draw, (margin, height - brand_font.size - round(height * 0.035)), brand,
                   brand_font, (231, 240, 241, 255), 2, (7, 18, 28, 255))
     return canvas
@@ -114,13 +174,19 @@ def make_horizontal(source: Image.Image, size: tuple[int, int], title: str,
                     round(width * 0.172), panel_top + round(height * 0.041)),
                    fill=(241, 193, 76, 255))
     margin = max(45, round(width * 0.039))
-    title_font = load_font(max(52, round(width * 0.056)))
-    subtitle_font = load_font(max(30, round(width * 0.030)))
     brand_font = load_font(max(20, round(width * 0.019)))
-    outlined_text(draw, (margin, panel_top + round(height * 0.070)), title,
-                  title_font, (255, 255, 255, 255), max(3, width // 270), (7, 18, 28, 255))
-    outlined_text(draw, (margin, panel_top + round(height * 0.215)), subtitle,
-                  subtitle_font, (247, 202, 77, 255), max(2, width // 380), (7, 18, 28, 255))
+    title_stroke = max(3, width // 270)
+    subtitle_stroke = max(2, width // 380)
+    title_font, title_lines = fit_block(draw, title, round(width * 0.78), max(52, round(width * 0.056)),
+                                        max(32, round(width * 0.032)), 2, title_stroke)
+    title_y = panel_top + round(height * 0.070)
+    title_height = draw_block(draw, (margin, title_y), title_lines, title_font,
+                              (255, 255, 255, 255), title_stroke, (7, 18, 28, 255), gap=3)
+    subtitle_font, subtitle_lines = fit_block(draw, subtitle, round(width * 0.78),
+                                               max(30, round(width * 0.030)), max(22, round(width * 0.022)),
+                                               2, subtitle_stroke)
+    draw_block(draw, (margin, title_y + title_height + round(height * 0.035)), subtitle_lines,
+               subtitle_font, (247, 202, 77, 255), subtitle_stroke, (7, 18, 28, 255), gap=3)
     outlined_text(draw, (width - round(width * 0.19), height - brand_font.size - round(height * 0.032)), brand,
                   brand_font, (231, 240, 241, 255), 2, (7, 18, 28, 255))
     return canvas

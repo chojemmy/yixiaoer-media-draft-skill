@@ -19,3 +19,13 @@
 - 视频号常见封面大小上限为 512 KB；运行脚本后检查文件大小并在上传返回值中记录实际尺寸。
 
 `scripts/make_cover.py` 采用 Pillow 确定性叠字。图像模型可用于探索构图，但不要让模型负责最终中文标题。
+
+## 视频封面提示词（需要探索构图时）
+
+中文：
+
+> 竖版短视频信息流封面，使用真实人物近景或关键动作截图作为主体，背景轻微压暗，底部留出深蓝色信息区；只突出一个结论，配两行超大中文标题，白色主字、暖黄色强调字、粗黑描边和阴影，安全边距充足，手机缩略图也清晰，简洁有冲击力；不要小字、复杂装饰、logo、水印或虚构人物。
+
+English:
+
+> Vertical short-video feed thumbnail built from a real close-up or key action frame, slightly darkened background, deep navy information band at the bottom; one clear takeaway, two lines of oversized Chinese typography, white primary type with warm yellow emphasis, thick black outline and shadow, generous safe margins, readable as a small mobile thumbnail; no tiny text, clutter, logos, watermarks, or invented people.
