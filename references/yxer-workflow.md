@@ -63,6 +63,17 @@ yxer draft save payload.json --json
 
 默认云端前先看账号代理预检。缺少代理时说明具体账号和原因；不要自动调用代理配置写接口。用户选择本机且客户端已配置时，显式传 `--publish-channel local --client-id ...`，并重新 validate/dry-run。
 
+## 提速与代理
+
+首次转录或模型下载通常是整个流程最慢的部分。后续运行复用本机模型、转录缓存和文件哈希对应的已上传资源。需要从 Hugging Face 等境外站点下载时，在当前进程显式使用本机 Clash 代理，例如：
+
+```powershell
+$env:HTTP_PROXY = "http://127.0.0.1:7890"
+$env:HTTPS_PROXY = "http://127.0.0.1:7890"
+```
+
+示例只表示本机代理设置；不要把凭证或代理密钥写入 payload、知识库或公开仓库。
+
 ## 5. 恢复规则
 
 - 账号或平台变更：重新 accounts/prepare/schema。

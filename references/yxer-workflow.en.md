@@ -40,7 +40,7 @@ Use the same payload and channel arguments for validation and dry-run:
 
 ```powershell
 yxer validate <platform-key> video payload.json --publish-channel <cloud|local> [--client-id <local-client>] --json
-yxer publish video <platform-key> video payload.json --publish-channel <cloud|local> [--client-id <local-client>] --dry-run --json
+yxer publish video <platform-key> payload.json --publish-channel <cloud|local> [--client-id <local-client>] --dry-run --json
 ```
 
 Set the platform field `pubType=0` before saving to a platform draft box. The internal Yixiaoer draft is separate:
@@ -54,3 +54,14 @@ Record task-set IDs, internal draft IDs, platform names, and stage status immedi
 ## Channel recovery
 
 If cloud preflight reports a missing account proxy, explain the exact account and do not silently change its configuration. Switch to a configured local client only after the user chooses that channel, then repeat validation and dry-run.
+
+## Speed and proxy
+
+The first transcription/model download is usually the slowest step. Reuse the local model and transcript cache, and use a local file hash to reuse uploaded resources. For Hugging Face or other overseas downloads, set the machine's approved Clash proxy for the current process before starting the download, for example:
+
+```powershell
+$env:HTTP_PROXY = "http://127.0.0.1:7890"
+$env:HTTPS_PROXY = "http://127.0.0.1:7890"
+```
+
+The proxy above is only an example of a local setting; never put credentials or proxy secrets in a payload, vault note, or public repository.
