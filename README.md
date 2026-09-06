@@ -55,6 +55,7 @@ python scripts/make_cover.py --input "<frame.jpg>" `
 - 公开发布需要用户另行明确授权。
 
 详细流程见 [SKILL.md](SKILL.md) 和 [references/](references/)。
+英文参考：[workflow](references/yxer-workflow.en.md)、[platform fields](references/platform-fields.en.md)、[cover style](references/cover-style.en.md)、[interaction options](references/interaction-options.en.md)。
 
 ## 安装
 

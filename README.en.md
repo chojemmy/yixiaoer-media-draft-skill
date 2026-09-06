@@ -35,7 +35,7 @@ The scripts are offline and credential-free. Cover generation uses deterministic
 
 Use real account, schema, category, and tag values returned by the CLI. Never guess dynamic fields. Do not commit account identifiers, client IDs, API keys, videos, private screenshots, or payloads. If cloud preflight reports a missing proxy, explain it and switch to a configured local client only after the user chooses that channel.
 
-The Chinese [README.md](README.md) is the primary landing page. See [SKILL.md](SKILL.md) and [references/](references/) for operational details.
+The Chinese [README.md](README.md) is the primary landing page. See [SKILL.md](SKILL.md) and the [English reference notes](references/) for operational details: [workflow](references/yxer-workflow.en.md), [platform fields](references/platform-fields.en.md), [cover style](references/cover-style.en.md), and [interaction options](references/interaction-options.en.md).
 
 ## License
 
