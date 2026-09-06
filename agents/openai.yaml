@@ -1,0 +1,6 @@
+interface:
+  display_name: "蚁小二媒体草稿"
+  short_description: "从 Obsidian 脚本生成可审核的多平台媒体草稿"
+  default_prompt: "使用 $yixiaoer-media-draft 处理一个视频，先让我选择封面、脚本、平台和草稿目标，再生成可审核草稿。"
+policy:
+  allow_implicit_invocation: true
