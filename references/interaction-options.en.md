@@ -9,7 +9,7 @@ Project: <number and article>
 3. Platforms: frontmatter / select (show account names)
 4. Fields: generate / user supplied / edit individually
 5. Declaration: original / repost; AI disclosure: yes / no / ask
-6. Destination: internal draft / platform draft box / both
+6. Destination: internal draft by default; platform draft box / both only when explicitly selected
 7. Channel: cloud / local
 Reply with option numbers or edit this line.
 ```

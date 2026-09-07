@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 from pathlib import Path
 from typing import Iterable
 
@@ -129,7 +130,7 @@ def draw_block(draw: ImageDraw.ImageDraw, xy: tuple[int, int], lines: list[str],
 
 
 def make_vertical(source: Image.Image, size: tuple[int, int], title: str,
-                  subtitle: str, brand: str, subject_x: float) -> Image.Image:
+                  subtitle: str, brand: str, subject_x: float, eyebrow: str = "") -> Image.Image:
     width, height = size
     panel_top = round(height * 0.62)
     image_height = round(height * 0.70)
@@ -138,14 +139,14 @@ def make_vertical(source: Image.Image, size: tuple[int, int], title: str,
     canvas = background.convert("RGB")
     canvas.paste(foreground, (0, 0))
     draw = ImageDraw.Draw(canvas, "RGBA")
-    draw.rectangle((0, panel_top, width, height), fill=(8, 25, 43, 232))
+    draw.rectangle((0, panel_top, width, height), fill=(8, 25, 43, 255))
     draw.rectangle((0, panel_top, width, panel_top + max(4, height // 180)), fill=(241, 193, 76, 255))
 
     margin = max(32, round(width * 0.065))
     eyebrow_font = load_font(max(24, round(width * 0.039)))
     brand_font = load_font(max(22, round(width * 0.032)))
     y = panel_top + round(height * 0.047)
-    outlined_text(draw, (margin, y), "技术替代的", eyebrow_font, (247, 207, 103, 255), 2, (7, 18, 28, 255))
+    outlined_text(draw, (margin, y), eyebrow, eyebrow_font, (247, 207, 103, 255), 2, (7, 18, 28, 255))
     title_stroke = max(3, width // 155)
     subtitle_stroke = max(2, width // 215)
     title_font, title_lines = fit_block(draw, title, width - margin * 2, max(44, round(width * 0.090)),
@@ -169,7 +170,7 @@ def make_horizontal(source: Image.Image, size: tuple[int, int], title: str,
     canvas = source.resize(size, Image.Resampling.LANCZOS).convert("RGB")
     draw = ImageDraw.Draw(canvas, "RGBA")
     panel_top = round(height * 0.61)
-    draw.rectangle((0, panel_top, width, height), fill=(7, 24, 41, 218))
+    draw.rectangle((0, panel_top, width, height), fill=(7, 24, 41, 255))
     draw.rectangle((round(width * 0.039), panel_top + round(height * 0.028),
                     round(width * 0.172), panel_top + round(height * 0.041)),
                    fill=(241, 193, 76, 255))
@@ -198,18 +199,24 @@ def save_jpeg(image: Image.Image, output: Path, max_bytes: int, quality: int) ->
     while True:
         image.save(output, format="JPEG", quality=current_quality, optimize=True, progressive=False)
         size = output.stat().st_size
-        if size <= max_bytes or current_quality <= 45:
+        if size <= max_bytes:
             return size
+        if current_quality <= 45:
+            raise ValueError(f"Cover exceeds {max_bytes} bytes; reduce dimensions or simplify the image")
         current_quality -= 4
 
 
 def main(argv: Iterable[str] | None = None) -> int:
+    sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--vertical-output", required=True, type=Path)
     parser.add_argument("--horizontal-output", required=True, type=Path)
-    parser.add_argument("--title", default="技术替代的临界点")
-    parser.add_argument("--subtitle", default="一过，替代突然加速")
+    parser.add_argument("--title", required=True)
+    parser.add_argument("--subtitle", default="")
+    parser.add_argument("--eyebrow", default="", help="Optional topic label above the portrait title.")
+    parser.add_argument("--vertical-crop-bottom", type=int, default=0,
+                        help="Pixels removed from the source bottom before portrait crop (e.g. subtitles).")
     parser.add_argument("--brand", default="")
     parser.add_argument("--vertical-size", type=parse_size, default=(1080, 1440))
     parser.add_argument("--horizontal-size", type=parse_size, default=(1920, 1080))
@@ -223,7 +230,10 @@ def main(argv: Iterable[str] | None = None) -> int:
     if args.max_bytes < 10_000:
         parser.error("--max-bytes is too small")
     source = Image.open(args.input).convert("RGB")
-    vertical = make_vertical(source, args.vertical_size, args.title, args.subtitle, args.brand, args.subject_x)
+    if not 0 <= args.vertical_crop_bottom < source.height:
+        parser.error("--vertical-crop-bottom must be nonnegative and smaller than source height")
+    portrait_source = source.crop((0, 0, source.width, source.height - args.vertical_crop_bottom))
+    vertical = make_vertical(portrait_source, args.vertical_size, args.title, args.subtitle, args.brand, args.subject_x, args.eyebrow)
     horizontal = make_horizontal(source, args.horizontal_size, args.title, args.subtitle, args.brand)
     vertical_size = save_jpeg(vertical, args.vertical_output, args.max_bytes, args.quality)
     horizontal_size = save_jpeg(horizontal, args.horizontal_output, args.max_bytes, args.quality)

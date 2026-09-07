@@ -11,7 +11,7 @@
 3. 平台：按 frontmatter / 选择（显示账号名）
 4. 字段：自动 / 用户提供 / 逐项修改
 5. 声明：原创 / 非原创；AI 内容声明：是 / 否 / 询问
-6. 目标：内部草稿 / 平台草稿箱 / 两者
+6. 目标：默认内部草稿；明确指定时才用平台草稿箱 / 两者
 7. 通道：云 / 本机
 请回复编号或直接改写这一行。
 ```
@@ -25,7 +25,7 @@ Project: <number and article>
 3. Platforms: frontmatter / select (show account names)
 4. Fields: generate / user supplied / edit individually
 5. Declaration: original / repost; AI disclosure: yes / no / ask
-6. Destination: internal draft / platform draft box / both
+6. Destination: internal draft by default; platform draft box / both only when explicitly selected
 7. Channel: cloud / local
 Reply with option numbers or edit this line.
 ```
